@@ -97,12 +97,23 @@ def generate_and_download_license():
     
     if not name or not version:
         return make_response("错误：必须提供 'name' 和 'ver' 参数 (例如: /gen?name=MyName&ver=25.2)", 400)
-
+    
+    # 验证输入长度
+    if len(name) > 100:
+        return make_response("错误：姓名长度不能超过 100 个字符", 400)
+    
     try:
         count = int(request.args.get('count', '1'))
+        # 验证 count 范围
+        if count < 1 or count > 1000:
+            return make_response("错误：用户数必须在 1-1000 之间", 400)
+        
         MajorVersion, MinorVersion = version.split('.')[0:2]
         MajorVersion = int(MajorVersion)
         MinorVersion = int(MinorVersion)
+        # 验证版本号范围
+        if MajorVersion < 0 or MajorVersion > 99 or MinorVersion < 0 or MinorVersion > 99:
+            return make_response("错误：版本号格式不正确", 400)
     except (ValueError, IndexError):
         return make_response("错误：版本号 'ver' 格式不正确，应为 '主版本号.次版本号' (例如: 25.2)", 400)
 
@@ -121,6 +132,7 @@ def generate_and_download_license():
 
 
 if __name__ == '__main__':
-    # 建议开启 debug=True 进行开发调试，部署时设为 False
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # 生产环境禁用调试模式
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=5000, debug=debug)
 
