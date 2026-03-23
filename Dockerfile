@@ -1,6 +1,6 @@
-FROM python:3.6-slim
+FROM python:3.13-slim
 
-MAINTAINER malaohu <tua@live.cn>
+LABEL maintainer="malaohu <tua@live.cn>"
 
 WORKDIR /usr/src/app
 
