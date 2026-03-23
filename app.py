@@ -1,12 +1,49 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import zipfile
 import io  # <--- 引入 io 模块，用于内存操作
+import logging
 from flask import Flask, request, send_file, make_response
+from werkzeug.exceptions import HTTPException
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# 配置速率限制
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
+
+# --- 全局错误处理 ---
+@app.errorhandler(Exception)
+def handle_exception(e):
+    if isinstance(e, HTTPException):
+        logger.warning(f"HTTP异常: {e.code} - {e.description}")
+        return e
+    logger.error(f"未处理的异常: {e}", exc_info=True)
+    return make_response("服务器内部错误", 500)
+
+@app.errorhandler(404)
+def not_found(e):
+    logger.warning(f"404错误: {request.path}")
+    return make_response("页面未找到", 404)
+
+@app.errorhandler(500)
+def internal_error(e):
+    logger.error(f"500错误: {e}")
+    return make_response("服务器内部错误", 500)
 
 # --- 核心加解密和编码逻辑 (这部分无需改动) ---
 VariantBase64Table = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/='
@@ -49,7 +86,7 @@ def EncryptBytes(key: int, bs: bytes):
 class LicenseType:
     Professional = 1
     Educational = 3
-    Persional = 4
+    Personal = 4
 
 # --- 重构后的核心功能 ---
 def GenerateLicenseInMemory(Type: LicenseType, Count: int, UserName: str, MajorVersion: int, MinorVersion: int):
@@ -57,7 +94,8 @@ def GenerateLicenseInMemory(Type: LicenseType, Count: int, UserName: str, MajorV
     重构后的函数：在内存中生成许可证 ZIP 文件，并返回一个 BytesIO 对象。
     不再向磁盘写入任何文件。
     """
-    assert Count >= 0
+    if Count < 0:
+        raise ValueError("Count must be non-negative")
     LicenseString = '%d#%s|%d%d#%d#%d3%d6%d#%d#%d#%d#' % (
         Type, UserName, MajorVersion, MinorVersion,
         Count,
@@ -87,6 +125,7 @@ def index():
 
 
 @app.route('/gen')
+@limiter.limit("10 per minute")
 def generate_and_download_license():
     """
     一个统一的路由，处理参数、生成许可证并直接提供下载。
@@ -96,6 +135,7 @@ def generate_and_download_license():
     version = request.args.get('ver')
     
     if not name or not version:
+        logger.warning(f"缺少必要参数: name={name}, ver={version}")
         return make_response("错误：必须提供 'name' 和 'ver' 参数 (例如: /gen?name=MyName&ver=25.2)", 400)
     
     # 验证输入长度
@@ -105,8 +145,8 @@ def generate_and_download_license():
     try:
         count = int(request.args.get('count', '1'))
         # 验证 count 范围
-        if count < 1 or count > 1000:
-            return make_response("错误：用户数必须在 1-1000 之间", 400)
+        if count < 1 or count > 999:
+            return make_response("错误：用户数必须在 1-999 之间", 400)
         
         MajorVersion, MinorVersion = version.split('.')[0:2]
         MajorVersion = int(MajorVersion)
@@ -122,6 +162,8 @@ def generate_and_download_license():
         LicenseType.Professional, count, name, MajorVersion, MinorVersion
     )
 
+    logger.info(f"许可证生成成功: name={name}, version={version}, count={count}")
+
     # 3. 使用 send_file 直接发送内存中的文件流
     return send_file(
         license_file_stream,
@@ -134,5 +176,9 @@ def generate_and_download_license():
 if __name__ == '__main__':
     # 生产环境禁用调试模式
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
-    app.run(host='0.0.0.0', port=5000, debug=debug)
+    host = os.environ.get('FLASK_HOST', '0.0.0.0')
+    port = int(os.environ.get('FLASK_PORT', '5000'))
+    
+    logger.info(f"启动服务器: host={host}, port={port}, debug={debug}")
+    app.run(host=host, port=port, debug=debug)
 
