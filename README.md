@@ -32,8 +32,6 @@ docker build -t mobaxterm-genkey:dev1 .
 ## Docker运行软件
 
 ```
-# 原版镜像malaohu/mobaxterm-genkey
-# 备用镜像zhuyifeiruichuang/mobaxterm-genkey:dev2
 docker run -d \
 --name mobaxterm-genkey \
 -p 5000:5000 \
