@@ -1,16 +1,11 @@
-# 上游项目
 
-代码fork自`https://github.com/malaohu/MobaXterm-GenKey`
-
-
-
-# 说明-MobaXterm-GenKey
+# 说明
 
 生成mobaxterm激活文件，支持配置授权用户名，授权发行版本号，授权用户数量。
 
 
 
-# 软件下载
+# 相关软件下载
 
 `https://mobaxterm.mobatek.net/`
 
