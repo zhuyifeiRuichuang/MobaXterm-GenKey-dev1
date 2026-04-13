@@ -20,8 +20,8 @@ python app.py
 ```
 
 
-
-# 构建容器镜像
+# 容器启动
+## 构建容器镜像
 
 ```bash
 docker build -t mobaxterm-genkey:dev1 .
@@ -29,7 +29,7 @@ docker build -t mobaxterm-genkey:dev1 .
 
 
 
-# Docker运行软件
+## Docker运行软件
 
 ```
 # 原版镜像malaohu/mobaxterm-genkey
@@ -48,6 +48,6 @@ mobaxterm-genkey:dev1
 
 
 
-### 激活方式
-将认证文件放到mobaxterm软件根目录，运行软件。
+# 激活方式
+将生成的认证文件放到mobaxterm软件根目录，运行软件。
 
