@@ -1,8 +1,9 @@
 
 # 说明
 
-生成mobaxterm激活文件，支持配置授权用户名，授权发行版本号，授权用户数量。
-
+生成mobaxterm激活文件，支持配置授权用户名，授权发行版本号，授权用户数量。  
+核心内容来自：https://github.com/flygon2018/MobaXterm-keygen  
+详细介绍文章：https://51.ruyo.net/17008.html
 
 
 # 相关软件下载
@@ -48,4 +49,3 @@ mobaxterm-genkey:dev1
 
 # 激活方式
 将生成的认证文件放到mobaxterm软件根目录，运行软件。
-
